@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    environment {
+        DB_HOST = 'money-management-ci-mysql-1'
+        DB_PORT = '3306'
+        DB_NAME = 'money_management'
+
+        DB_CREDENTIALS = credentials('ci-mysql-credentials')
+    }
+
     stages {
 
         stage('Create Virtual Environment') {
@@ -17,7 +25,12 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh '.venv/bin/python -m pytest -q'
+                withEnv([
+                    "DB_USER=${DB_CREDENTIALS_USR}",
+                    "DB_PASSWORD=${DB_CREDENTIALS_PSW}"
+                ]) {
+                    sh '.venv/bin/python -m pytest -q'
+                }
             }
         }
 
