@@ -9,9 +9,9 @@ pipeline {
             }
         }
 
-        stage('Hello') {
+        stage('Install Dependencies') {
             steps {
-                echo 'Money Management CI Pipeline started'
+                sh '.venv/bin/pip install -r requirements.txt'
             }
         }
 
