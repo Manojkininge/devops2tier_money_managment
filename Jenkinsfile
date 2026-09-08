@@ -2,49 +2,47 @@ pipeline {
     agent any
 
     environment {
-        // CI MySQL container hostname on the Docker CI network
+        // CI MySQL container hostname
         DB_HOST = 'money-management-ci-mysql-1'
 
-        // MySQL listens on port 3306 inside the Docker network
+        // MySQL internal Docker port
         DB_PORT = '3306'
 
-        // Database created by the CI MySQL container
+        // CI database name
         DB_NAME = 'money_management'
 
-        // Retrieve database username/password securely from Jenkins Credentials
+        // Jenkins securely provides the database username and password
         DB_CREDENTIALS = credentials('ci-mysql-credentials')
     }
 
     stages {
 
-        // Create an isolated Python environment for this Jenkins build
         stage('Create Virtual Environment') {
             steps {
+                // Create an isolated Python environment for this build
                 sh 'python3 -m venv .venv'
             }
         }
 
-        // Install application dependencies inside the virtual environment
         stage('Install Dependencies') {
             steps {
+                // Install project dependencies inside the virtual environment
                 sh '.venv/bin/pip install -r requirements.txt'
             }
         }
 
-        // Run tests and generate the XML coverage report for SonarQube
         stage('Run Tests') {
             steps {
-                withEnv([
-                    "DB_USER=${DB_CREDENTIALS_USR}",
-                    "DB_PASSWORD=${DB_CREDENTIALS_PSW}"
-                ]) {
-                    sh '''
-                        .venv/bin/python -m pytest \
-                            --cov=app \
-                            --cov-report=term-missing \
-                            --cov-report=xml
-                    '''
-                }
+                // Pass Jenkins credentials to the application through shell variables
+                sh '''
+                    export DB_USER="$DB_CREDENTIALS_USR"
+                    export DB_PASSWORD="$DB_CREDENTIALS_PSW"
+
+                    .venv/bin/python -m pytest \
+                        --cov=app \
+                        --cov-report=term-missing \
+                        --cov-report=xml
+                '''
             }
         }
 
