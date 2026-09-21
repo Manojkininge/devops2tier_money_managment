@@ -8,14 +8,15 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
 
-    #ports:
-    # - "3306:3306"
-
     volumes:
+      # Persist MySQL data so database records survive container recreation.
       - mysql_data:/var/lib/mysql
+
+      # Initialize the database schema when the MySQL volume is created.
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
     healthcheck:
+      # Verify that MySQL is accepting connections before starting the app.
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 10s
       timeout: 5s
@@ -23,11 +24,16 @@ services:
 
 
   app:
-    build: .
+    # Use the Docker image already built by Jenkins.
+    # Locally, it defaults to money-management:latest.
+    # Jenkins can override this with a specific build image such as
+    # money-management:build-25 for traceable deployments.
+    image: ${APP_IMAGE:-money-management:latest}
 
     restart: unless-stopped
 
     environment:
+      # Use the Docker Compose service name to reach MySQL.
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: root
@@ -35,12 +41,15 @@ services:
       DB_NAME: ${DB_NAME}
 
     ports:
+      # Expose the Flask API on the host's port 5000.
       - "5000:5000"
 
     depends_on:
+      # Start the Flask application only after MySQL is healthy.
       mysql:
         condition: service_healthy
 
 
 volumes:
+  # Named volume provides persistent MySQL storage.
   mysql_data:
