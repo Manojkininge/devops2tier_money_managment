@@ -71,12 +71,13 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                // Build the Money Management application Docker image
-                // using the Dockerfile in the project root.
-                sh 'docker build -t money-management:ci .'
-            }
-        }
-    }
+       stage('Build Docker Image') {
+           steps {
+        // Tag the Docker image with Jenkins BUILD_NUMBER.
+        // This creates a unique image version for every CI build
+        // and will later allow us to deploy or roll back a specific build.
+        sh 'docker build -t money-management:build-${BUILD_NUMBER} .'
+                 }
+           }
+       }
 }
