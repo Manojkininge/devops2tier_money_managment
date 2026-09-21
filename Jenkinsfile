@@ -70,5 +70,13 @@ pipeline {
                 }
             }
         }
+
+        stage('Build Docker Image') {
+            steps {
+                // Build the Money Management application Docker image
+                // using the Dockerfile in the project root.
+                sh 'docker build -t money-management:ci .'
+            }
+        }
     }
 }
