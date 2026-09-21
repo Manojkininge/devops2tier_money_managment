@@ -46,5 +46,29 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Get the SonarQube Scanner configured in Jenkins
+                    def scannerHome = tool 'SonarQube-Scanner'
+
+                    // Load SonarQube server URL and authentication configuration
+                    withSonarQubeEnv('SonarQube') {
+                        // Run analysis using sonar-project.properties
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                // Wait for SonarQube to finish analysis and fail the pipeline
+                // if the project does not meet the configured Quality Gate.
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
     }
 }
