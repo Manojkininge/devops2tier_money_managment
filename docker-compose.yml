@@ -26,8 +26,8 @@ services:
   app:
     # Use the Docker image already built by Jenkins.
     # Locally, it defaults to money-management:latest.
-    # Jenkins can override this with a specific build image such as
-    # money-management:build-25 for traceable deployments.
+    # Jenkins overrides this with a specific build image such as
+    # money-management:build-24.
     image: ${APP_IMAGE:-money-management:latest}
 
     restart: unless-stopped
@@ -41,16 +41,13 @@ services:
       DB_NAME: ${DB_NAME}
 
     ports:
-      # Expose the Flask API on the host's port 5000.
-      #- "5000:5000"
-      ports:
       # Map a configurable host port to Flask's internal port 5000.
-      # This allows Jenkins CD to use a different host port without
-      # changing the application itself.
+      # Local Compose defaults to localhost:5000.
+      # Jenkins CD uses APP_PORT=5001 to avoid a port conflict.
       - "${APP_PORT:-5000}:5000"
 
     depends_on:
-      # Start the Flask application only after MySQL is healthy.
+      # Start Flask only after MySQL is healthy.
       mysql:
         condition: service_healthy
 
