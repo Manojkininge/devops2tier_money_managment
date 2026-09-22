@@ -100,12 +100,11 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                // Wait for the Flask application to start before checking the API.
+                // Give the Flask application a few seconds to start before checking the API.
                 sh '''
                     echo "Waiting for Flask application to start..."
                     sleep 10
 
-                    // Verify that the deployed Flask API is responding.
                     curl --fail --silent --show-error \
                         http://localhost:5001/api/transactions
 
