@@ -100,15 +100,36 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                // Give the Flask application a few seconds to start before checking the API.
+                // Retry the API check because the Flask application may need
+                // some time to become ready after the container starts.
                 sh '''
-                    echo "Waiting for Flask application to start..."
-                    sleep 10
+                    echo "Waiting for Flask application to become ready..."
 
-                    curl --fail --silent --show-error \
-                        http://localhost:5001/api/transactions
+                    MAX_ATTEMPTS=6
+                    ATTEMPT=1
 
-                    echo "Application health check passed."
+                    while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
+                        echo "Health check attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+                        if curl --fail --silent --show-error \
+                            http://localhost:5001/api/transactions; then
+
+                            echo ""
+                            echo "Application health check passed."
+                            exit 0
+                        fi
+
+                        if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
+                            echo "Application is not ready yet. Waiting 5 seconds..."
+                            sleep 5
+                        fi
+
+                        ATTEMPT=$((ATTEMPT + 1))
+                    done
+
+                    echo "Application health check failed."
+                    echo "The deployed Flask API did not respond successfully."
+                    exit 1
                 '''
             }
         }
