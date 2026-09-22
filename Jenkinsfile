@@ -71,13 +71,30 @@ pipeline {
             }
         }
 
-       stage('Build Docker Image') {
-           steps {
-        // Tag the Docker image with Jenkins BUILD_NUMBER.
-        // This creates a unique image version for every CI build
-        // and will later allow us to deploy or roll back a specific build.
-        sh 'docker build -t money-management:build-${BUILD_NUMBER} .'
-                 }
-           }
-       }
+        stage('Build Docker Image') {
+            steps {
+                // Tag the Docker image with Jenkins BUILD_NUMBER.
+                // This creates a unique image version for every CI build
+                // and will later allow us to deploy or roll back a specific build.
+                sh 'docker build -t money-management:build-${BUILD_NUMBER} .'
+            }
+        }
+	
+	stage('Deploy with Docker Compose') {
+            steps {
+                // Deploy the exact Docker image created by this Jenkins build.
+                // Database credentials come from Jenkins credentials instead
+                // of being stored in the repository.
+                sh '''
+                    export APP_IMAGE="money-management:build-${BUILD_NUMBER}"
+                    export DB_USER="$DB_CREDENTIALS_USR"
+                    export DB_PASSWORD="$DB_CREDENTIALS_PSW"
+                    export DB_NAME="money_management"
+
+                    docker compose -p money-management-cd down || true
+                    docker compose -p money-management-cd up -d
+                '''
+            }
+        }
+    }
 }
