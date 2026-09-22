@@ -87,6 +87,7 @@ pipeline {
                 // of being stored in the repository.
                 sh '''
                     export APP_IMAGE="money-management:build-${BUILD_NUMBER}"
+		    export APP_PORT="5001"
                     export DB_USER="$DB_CREDENTIALS_USR"
                     export DB_PASSWORD="$DB_CREDENTIALS_PSW"
                     export DB_NAME="money_management"

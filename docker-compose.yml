@@ -42,7 +42,12 @@ services:
 
     ports:
       # Expose the Flask API on the host's port 5000.
-      - "5000:5000"
+      #- "5000:5000"
+      ports:
+      # Map a configurable host port to Flask's internal port 5000.
+      # This allows Jenkins CD to use a different host port without
+      # changing the application itself.
+      - "${APP_PORT:-5000}:5000"
 
     depends_on:
       # Start the Flask application only after MySQL is healthy.
