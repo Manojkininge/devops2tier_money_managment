@@ -1,9 +1,24 @@
+
+# Python virtual environments
 venv/
+.venv/
+
+# Environment files containing credentials
 .env
+cd-mysql-env.txt
+
+# Python cache files
 __pycache__/
 *.pyc
+
+# Pytest cache
 .pytest_cache/
+
+# Test coverage reports
 coverage.xml
 .coverage
+htmlcov/
+
+# SonarQube local data
 .sonar/
 sonarqube_data_backup.tar.gz
