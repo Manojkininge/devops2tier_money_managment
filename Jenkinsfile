@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -74,17 +75,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 // Tag the Docker image with Jenkins BUILD_NUMBER.
-                // This creates a unique image version for every CI build
-                // and will later allow us to deploy or roll back a specific build.
+                // A unique image version supports deployment and rollback.
                 sh 'docker build -t money-management:build-${BUILD_NUMBER} .'
             }
         }
 
         stage('Deploy with Docker Compose') {
             steps {
-                // Deploy the exact Docker image created by this Jenkins build.
-                // Database credentials come from Jenkins credentials instead
-                // of being stored in the repository.
+                // Deploy the image built by this Jenkins build.
+                // Database credentials are provided through Jenkins credentials.
                 sh '''
                     export APP_IMAGE="money-management:build-${BUILD_NUMBER}"
                     export APP_PORT="5001"
@@ -100,10 +99,11 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                // Retry the API check because the Flask application may need
-                // some time to become ready after the container starts.
+                // Check the API inside the deployed Flask container.
+                // localhost inside Jenkins refers to Jenkins itself, so use
+                // docker exec to reach the deployed application's API instead.
                 sh '''
-                    echo "Waiting for Flask application to become ready..."
+                    echo "Waiting for the deployed Flask API..."
 
                     MAX_ATTEMPTS=6
                     ATTEMPT=1
@@ -111,16 +111,13 @@ pipeline {
                     while [ "$ATTEMPT" -le "$MAX_ATTEMPTS" ]; do
                         echo "Health check attempt $ATTEMPT of $MAX_ATTEMPTS"
 
-                        if curl --fail --silent --show-error \
-                            http://localhost:5001/api/transactions; then
-
-                            echo ""
+                        if docker exec money-management-cd-app-1 python -c "import urllib.request; r=urllib.request.urlopen('http://127.0.0.1:5000/api/transactions', timeout=5); print('HTTP:', r.status); r.read()"; then
                             echo "Application health check passed."
                             exit 0
                         fi
 
                         if [ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
-                            echo "Application is not ready yet. Waiting 5 seconds..."
+                            echo "API is not ready. Waiting 5 seconds..."
                             sleep 5
                         fi
 
@@ -128,7 +125,6 @@ pipeline {
                     done
 
                     echo "Application health check failed."
-                    echo "The deployed Flask API did not respond successfully."
                     exit 1
                 '''
             }
